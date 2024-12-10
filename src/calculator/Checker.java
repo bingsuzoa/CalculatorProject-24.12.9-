@@ -13,13 +13,9 @@ public class Checker {
             String c = Character.toString(command.charAt(i));
             checkCommand.add(c);
         }
-        if(checkCommand.size() == 1){
-            String c = checkCommand.getFirst();
-            if(c.chars().allMatch(Character::isDigit)) {
-                checkedCommand.add(Integer.parseInt(c));
-            } else {
-                throw new IllegalArgumentException(c + " 는 유효하지 않은 입력입니다. 입력을 다시 확인해주세요.");
-            }
+
+        if(command.matches("^[0-9 .]*$")){
+            checkedCommand.add(Double.parseDouble(command));
         }
         else {
             boolean complete = false;
@@ -28,10 +24,13 @@ public class Checker {
                 for (OperatorEnum ope : OperatorEnum.values()) {
                     String c = checkCommand.get(i);
                     if (c.equals(ope.getSign())) {
-                        int x = Integer.parseInt(command.substring(0, i));
+
+                        double x = Double.parseDouble(command.substring(0, i));
                         checkedCommand.add(x);
                         checkedCommand.add(ope.getSign());
-                        int y = Integer.parseInt(command.substring(i+1));
+                        double y = Double.parseDouble(command.substring(i+1));
+                        if(ope.getSign().equals("/") && (x == 0 || y == 0))
+                            throw new ArithmeticException("0으로 나눌 수 없습니다.");
                         checkedCommand.add(y);
                         complete = true;
                         break;
@@ -39,7 +38,8 @@ public class Checker {
                 }
                 if (i == checkCommand.size() - 1) {
                     try {
-                        int x = Integer.parseInt(command);
+                        double x = Double.parseDouble(command);
+
                         if(x < 0) throw new IllegalArgumentException(x + " : 음수만 입력하셨습니다. 연산이 불가합니다.");
                         if(x > 0) checkedCommand.add(x);
                     } catch (NumberFormatException e) {

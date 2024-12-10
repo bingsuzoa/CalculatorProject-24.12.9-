@@ -1,79 +1,112 @@
 package calculator;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 class CheckerTest {
+    KakaoCalculator calculator = new KakaoCalculator();
+    Checker checker = new Checker();
 
-    @Test
-    public void getTest() {
-        String command = "9";
-        assertTrue(command.chars().allMatch(Character::isDigit));
+    //////////////////해피 테스트
+    @DisplayName("덧셈 테스트")
+    @ParameterizedTest
+    @CsvSource({"5 + 3, 8", "-5 + 3, -2", "-5 + -3, -8", " 0.5 + 0.5, 1"})
+    public void add(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
     }
 
-    @Test
-    public void checkInputStructureTrueTest(){
-        Checker checker = new Checker();
-        List<Object> checkedCommand;
-        try {
-            String command = "-1 * -2";
-            checkedCommand = checker.checkInputStructure(command);
-            for(Object input : checkedCommand){
-                System.out.println(input.toString());
-            }
-        } catch(AssertionError e){
-            System.out.println(e.getMessage());
-        }
+    @DisplayName("뺄셈 테스트")
+    @ParameterizedTest
+    @CsvSource({"5 - 3, 2", "-5 - 3, -8", "-5 - -3, -2", " 5 - 0, 5"})
+    public void minus(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
     }
 
-    @Test
-    public void checkedTest(){
-        List<String> checkCommand = new ArrayList<>();
-        List<Object> checkedCommand = new ArrayList<>();
-        String command = "-1*-5";
-
-        for(int i = 0; i < command.length(); i++){
-            String c = Character.toString(command.charAt(i));
-            checkCommand.add(c);
-        }
-
-        boolean complete = false;
-        for (int i = 1; i < checkCommand.size(); i++) {
-            if (complete) break;
-            for (OperatorEnum ope : OperatorEnum.values()) {
-                String c = checkCommand.get(i);
-                if (c.equals(ope.getSign())) {
-                    int x = Integer.parseInt(command.substring(0, i));
-                    checkedCommand.add(x);
-                    checkedCommand.add(ope.getSign());
-                    int y = Integer.parseInt(command.substring(i+1));
-                    checkedCommand.add(y);
-                    complete = true;
-                    break;
-                }
-                if (i == checkCommand.size() - 1) {
-                    try {
-                        int x = Integer.parseInt(command);
-                        if(x < 0) throw new IllegalArgumentException(x + " : 음수만 입력하셨습니다. 연산이 불가합니다.");
-                        if(x > 0) checkedCommand.add(x);
-                    } catch (NumberFormatException e) {
-                        throw new NumberFormatException(command + " : 유효하지 않은 연산자 입니다.");
-                    }
-                }
-            }
-        }
+    @DisplayName("곱셈 테스트")
+    @ParameterizedTest
+    @CsvSource({"5 * 3, 15", "-5 * 3, -15", "-0.5 * -0.3, 0.15", " 5 * 0, 0"})
+    public void multiply(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
     }
 
+    @DisplayName("나눗셈 테스트")
+    @ParameterizedTest
+    @CsvSource({"5 / 3, 1.67", "-5 / 3, -1.67", "-5 / -3, 1.67"})
+    public void divide(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
+    }
+
+    @DisplayName("제곱근 테스트 : 양수(정수,실수)")
+    @ParameterizedTest
+    @CsvSource({"25 , 5", "0.25 , 0.5"})
+    public void root(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
+    }
+
+    @DisplayName("제곱 테스트")
+    @ParameterizedTest
+    @CsvSource({"5 ^ 2, 25", "-5 ^ 3, -125", "-0.5 ^ 2, 0.25", " 5 ^ 0, 1", "5 ^ -1, 0.2"})
+    public void square(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
+    }
+
+    @DisplayName("메모리 저장 및 출력 테스트")
     @Test
-    public void calculate(){
-        KakaoCalculator kakaoCalculator = new KakaoCalculator();
-        String command = "2 / 3";
-        kakaoCalculator.calculate(command);
+    public void continousCalculation(){
+        String[] commandArr = {"5 ^ 2", "5 -2"};
+        for(String command : commandArr){
+            calculator.calculate(command);
+        }
+        assertEquals("[5.0 ^ 2.0 = 25.0, 5.0 - 2.0 = 3.0]", calculator.getList().toString());
+    }
+
+
+    ///////////////////////////////////에러 테스트
+    @ParameterizedTest
+    @DisplayName("0으로 나누었을 때 : throw ArithmeticException")
+    @ValueSource(strings = {"5 / 0", " 0 / -5"})
+    public void divideZeroException(String command){;
+        assertThrows(ArithmeticException.class, () -> checker.checkInputStructure(command));
+    }
+
+    @ParameterizedTest
+    @DisplayName("유효하지 않은 연산자 입력했을 때 : throw IllegalArgumentException")
+    @ValueSource(strings = {"5 # 3, 5 ? 3, 5 @ 2"})
+    public void invalidOperatorException(String command){
+        assertThrows(IllegalArgumentException.class, () -> checker.checkInputStructure(command));
+    }
+
+    @DisplayName("음수만 입력했을 때 : IllegalArgumentException")
+    @Test
+    public void negativeException(){
+        String command = "-1.5";
+        assertThrows(IllegalArgumentException.class, () -> checker.checkInputStructure(command));
+    }
+
+    ///////////////////////////경계테스트
+    @ParameterizedTest
+    @DisplayName("초과되는 범위의 수 입력 했을 때 : Infinity 출력 / 0 출력")
+    @ValueSource(strings = {"25 ^ 24424803958038539852852098850","25 ^ -2442480395803853985205093850"})
+    public void outOfRangeException(String command){
+        calculator.calculate(command);
+    }
+
+    @ParameterizedTest
+    @DisplayName("소수점 연산 테스트 : 나눗셈, 제곱근과 같이 나누어 떨어지지 않는 경우 소수 셋째자리에서 반올림")
+    @CsvSource({"10 / 7, 1.43", "10 , 3.16"})
+    public void decimalTest(String command, double expectedResult){
+        double actualResult = calculator.calculate(command);
+        assertEquals(expectedResult,actualResult);
     }
 }
